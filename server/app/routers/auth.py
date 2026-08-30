@@ -13,13 +13,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.get("/registration-open")
 def registration_open(db: Session = Depends(get_db)) -> dict:
-    has_users = db.scalar(select(func.count(User.id))) > 0
+    has_users = db.scalar(select(func.count(User.id))) > 0  # pylint: disable=not-callable
     return {"open": ALLOW_REGISTRATION or not has_users}
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    has_users = db.scalar(select(func.count(User.id))) > 0
+    has_users = db.scalar(select(func.count(User.id))) > 0  # pylint: disable=not-callable
     if has_users and not ALLOW_REGISTRATION:
         raise HTTPException(status_code=403, detail="Registration is closed")
 

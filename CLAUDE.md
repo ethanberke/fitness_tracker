@@ -9,12 +9,18 @@ ES modules, clarity over cleverness).
 ```bash
 ./dev.sh                                          # API :8000 + Vite :5173 (LAN-visible)
 server/.venv/bin/python -m pytest server -q       # backend tests (13, all should pass)
+server/.venv/bin/ruff check .                     # fast Python lint (also the pre-commit hook)
+server/.venv/bin/python -m pylint server/app server/scripts server/tests   # must stay 10.00
+npm run lint                                      # eslint (0 errors; 2 known warnings)
 npm run build                                     # typecheck-by-bundling; catches import errors
 docker compose up -d --build                      # production: one image, one port
 ```
 
 There is no frontend test suite. `npm run build` is the fastest way to catch a
 broken import or a bad prop before a human sees it.
+
+`.github/workflows/ci.yml` runs all four on every push and PR, and publishes the
+image only when they pass.
 
 ## What This Is
 
@@ -137,9 +143,33 @@ Back up the file first (`sqlite3 data/fitness.db ".backup 'backup.db'"`).
 ## Testing Before Committing
 
 ```bash
-server/.venv/bin/python -m pytest server -q   # must be green
-npm run build                                  # must succeed
+server/.venv/bin/python -m pytest server -q                               # must be green
+server/.venv/bin/python -m pylint server/app server/scripts server/tests  # must stay 10.00
+npm run lint                                                              # 0 errors
+npm run build                                                             # must succeed
 ```
+
+**The pre-commit hook** (`.githooks/pre-commit`) runs ruff and eslint on *staged
+files only*, so it costs well under a second. `dev.sh` enables it; otherwise
+`git config core.hooksPath .githooks`. Bypass with `SKIP_HOOKS=true git commit`,
+matching the convention in the workspace `git-enforcer` tool. Deliberately not in
+the hook: pylint, pytest, and the frontend build — CI covers those, and a hook
+that takes ten seconds is a hook people disable.
+
+**Two Python linters on purpose.** Ruff is the fast gate (hook + first CI step);
+pylint is the deeper one (design checks, `too-many-*`, SQLAlchemy-aware analysis
+ruff doesn't do). They're configured to agree: same 120-column limit, same
+exclusion of the legacy `server/main.py`. Ruff's `B008` is turned off through
+`extend-immutable-calls` rather than a blanket ignore, because `Depends()` in a
+default argument is the FastAPI idiom and B008 is otherwise worth having.
+
+**Lint conventions.** `.pylintrc` disables the docstring checks deliberately —
+house style is minimal comments, and pydantic schemas and FastAPI routes describe
+themselves. Where a check is silenced for a specific line, the reason is in a
+comment beside it (SQLAlchemy's `func.count` false positive, `SessionLocal`'s
+naming, the size of `series()` — issue #10). Prefer that over widening `.pylintrc`.
+ESLint's two remaining warnings are context files exporting their own hook, which
+is idiomatic; the Fast Refresh caveat is not worth restructuring for.
 
 Security checklist for this repo: no secrets in the tree (`data/` is ignored),
 weights still round-trip through kg, and cross-user isolation tests still pass.

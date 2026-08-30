@@ -73,12 +73,16 @@ export default function Progress() {
 
   useEffect(() => {
     if (!selected || !metric) return
-    setSeries(null)
+    // A slow earlier request must not overwrite the series the user is now looking at.
+    let current = true
     const start = rangeDays ? dayjs().subtract(rangeDays, 'day').format('YYYY-MM-DD') : undefined
     api
       .series({ exercise_id: selected.id, metric, start })
-      .then(setSeries)
-      .catch((err) => setError(err.message))
+      .then((result) => current && setSeries(result))
+      .catch((err) => current && setError(err.message))
+    return () => {
+      current = false
+    }
   }, [selected, metric, rangeDays])
 
   const changeCopy = useMemo(() => {
@@ -118,6 +122,7 @@ export default function Progress() {
         isOptionEqualToValue={(option, value) => option.id === value.id}
         onChange={(_event, value) => {
           if (!value) return
+          setSeries(null)
           setSelected(value)
           setMetric(value.metrics[0])
           setSearchParams({ exercise: String(value.id) }, { replace: true })
@@ -131,7 +136,11 @@ export default function Progress() {
           size="small"
           exclusive
           value={metric}
-          onChange={(_event, value) => value && setMetric(value)}
+          onChange={(_event, value) => {
+            if (!value) return
+            setSeries(null)
+            setMetric(value)
+          }}
         >
           {(selected?.metrics ?? []).map((option) => (
             <ToggleButton key={option} value={option}>
@@ -145,7 +154,11 @@ export default function Progress() {
         size="small"
         exclusive
         value={rangeDays}
-        onChange={(_event, value) => value !== null && setRangeDays(value)}
+        onChange={(_event, value) => {
+          if (value === null) return
+          setSeries(null)
+          setRangeDays(value)
+        }}
         fullWidth
       >
         {RANGES.map((range) => (

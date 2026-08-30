@@ -1,0 +1,30 @@
+[MAIN]
+py-version = 3.12
+ignore-paths = ^server/\.venv/.*$
+
+[FORMAT]
+# SQLAlchemy 2.0's typed columns (Mapped[...] + mapped_column(...)) run long, and
+# breaking them across lines reads worse than the overflow.
+max-line-length = 120
+
+[MESSAGES CONTROL]
+disable =
+    # House style is minimal comments — WHY, not WHAT. Pydantic schemas and
+    # FastAPI routes describe themselves through types and decorators, so
+    # mandatory docstrings would be filler.
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    # Models and schemas are data containers by design.
+    too-few-public-methods,
+    # FastAPI resolves handler parameters by keyword through dependency
+    # injection; nothing is ever passed positionally.
+    too-many-positional-arguments
+
+[DESIGN]
+# Route handlers take query params plus injected dependencies; 5 is unrealistic.
+max-args = 10
+# progress.series() dispatches over every metric a modality offers.
+max-locals = 25
+max-statements = 60
+max-branches = 25

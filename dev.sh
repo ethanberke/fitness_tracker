@@ -3,6 +3,13 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Git hooks are opt-in per clone; enabling here means a fresh checkout is set up
+# by the same command that starts the app.
+if [ "$(git config core.hooksPath || true)" != ".githooks" ]; then
+  git config core.hooksPath .githooks
+  echo "✓ pre-commit hook enabled (bypass once with SKIP_HOOKS=true)"
+fi
+
 if [ ! -d server/.venv ]; then
   python3 -m venv server/.venv
   server/.venv/bin/pip install -r server/requirements.txt

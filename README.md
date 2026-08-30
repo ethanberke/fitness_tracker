@@ -29,11 +29,34 @@ server/.venv/bin/python -m uvicorn app.main:app --app-dir server --reload --port
 npm install && npm run dev -- --host
 ```
 
-### Tests
+### Tests and linting
 
 ```bash
-server/.venv/bin/python -m pytest server -q
+server/.venv/bin/python -m pytest server -q                               # API tests
+server/.venv/bin/ruff check .                                             # fast backend lint
+server/.venv/bin/python -m pylint server/app server/scripts server/tests  # deep backend lint
+npm run lint                                                              # frontend lint
+npm run build                                                             # catches bad imports
 ```
+
+### Pre-commit hook
+
+`./dev.sh` enables it, or turn it on manually:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+It runs ruff and eslint against **staged files only** — fast enough not to notice.
+Everything slower stays in CI. To bypass it once:
+
+```bash
+SKIP_HOOKS=true git commit -m "..."
+```
+
+GitHub Actions runs all four on every push and pull request, then builds and
+publishes the Docker image — to GHCR always, and to Docker Hub when the
+`PUBLISH_DOCKERHUB` repository variable is set to `true`.
 
 ### Demo data
 

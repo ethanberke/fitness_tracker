@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+#
+# Lints only what you're committing. Fast by design — ruff and eslint on staged
+# files take milliseconds, so this stays out of your way. The slower checks
+# (pylint, pytest, the frontend build) run in CI.
+#
+# Enable:      git config core.hooksPath .githooks
+# Skip once:   SKIP_HOOKS=true git commit -m "..."
+
+set -uo pipefail
+
+if [ "${SKIP_HOOKS:-}" = "true" ]; then
+  echo "⏭  SKIP_HOOKS=true — skipping pre-commit checks"
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root" || exit 1
+
+# NUL-delimited: filenames with spaces are real here (running_logo.png arrived
+# as "running track.png"), and word-splitting on them silently lints the wrong
+# paths.
+mapfile -d '' -t py_files < <(git diff --cached --name-only --diff-filter=ACM -z -- '*.py')
+mapfile -d '' -t js_files < <(git diff --cached --name-only --diff-filter=ACM -z -- '*.js' '*.jsx')
+
+status=0
+
+if [ ${#py_files[@]} -gt 0 ]; then
+  if [ -x server/.venv/bin/ruff ]; then
+    echo "→ ruff (${#py_files[@]} file(s))"
+    # --force-exclude so ruff.toml's exclusions still apply to explicit paths.
+    server/.venv/bin/ruff check --force-exclude "${py_files[@]}" || status=1
+  else
+    echo "✗ ruff not found. Install it:"
+    echo "    server/.venv/bin/pip install -r server/requirements-dev.txt"
+    status=1
+  fi
+fi
+
+if [ ${#js_files[@]} -gt 0 ]; then
+  if [ -x node_modules/.bin/eslint ]; then
+    echo "→ eslint (${#js_files[@]} file(s))"
+    node_modules/.bin/eslint --no-warn-ignored "${js_files[@]}" || status=1
+  else
+    echo "✗ eslint not found. Install it:"
+    echo "    npm install"
+    status=1
+  fi
+fi
+
+if [ $status -ne 0 ]; then
+  echo
+  echo "Commit blocked. Fix the above, or bypass with:"
+  echo "    SKIP_HOOKS=true git commit ..."
+fi
+
+exit $status

@@ -1,3 +1,7 @@
+# The app reads its config at import time, so the environment has to be set
+# before importing it; pytest fixtures shadow their own names by design.
+# pylint: disable=wrong-import-position,redefined-outer-name
+
 import os
 import tempfile
 from pathlib import Path

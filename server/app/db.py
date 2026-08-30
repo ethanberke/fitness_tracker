@@ -16,6 +16,8 @@ if DATABASE_URL.startswith("sqlite"):
         cursor.close()
 
 
+# SessionLocal follows the SQLAlchemy convention, not PEP 8's constant casing.
+# pylint: disable-next=invalid-name
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, future=True)
 
 

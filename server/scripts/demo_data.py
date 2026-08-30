@@ -8,6 +8,7 @@ Delete it later from History, or start clean by removing data/fitness.db.
 """
 
 import argparse
+import json
 import random
 import sys
 import urllib.error
@@ -21,8 +22,6 @@ def call(path, payload=None, token=None, method=None):
     data = None
     headers = {}
     if payload is not None:
-        import json
-
         data = json.dumps(payload).encode()
         headers["Content-Type"] = "application/json"
     if token:
@@ -30,8 +29,6 @@ def call(path, payload=None, token=None, method=None):
     request = urllib.request.Request(f"{BASE}{path}", data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(request) as response:
-            import json
-
             body = response.read().decode()
             return json.loads(body) if body else None
     except urllib.error.HTTPError as error:

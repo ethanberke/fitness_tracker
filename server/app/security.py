@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 import jwt
@@ -25,7 +25,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_token(user_id: int) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {"sub": str(user_id), "iat": now, "exp": now + timedelta(days=TOKEN_TTL_DAYS)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -44,8 +44,8 @@ def current_user(
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = int(payload["sub"])
-    except (jwt.PyJWTError, KeyError, ValueError):
-        raise unauthorized
+    except (jwt.PyJWTError, KeyError, ValueError) as exc:
+        raise unauthorized from exc
 
     user = db.get(User, user_id)
     if user is None:

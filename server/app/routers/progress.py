@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -122,6 +123,9 @@ def logged_exercises(user: User = Depends(current_user), db: Session = Depends(g
 
 
 @router.get("/series", response_model=ProgressSeries)
+# One branch per metric per modality. Splitting it into per-metric builders is
+# worth doing, but it is a refactor, not a lint fix — tracked in issue #10.
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def series(
     exercise_id: int,
     metric: str | None = None,
@@ -409,8 +413,6 @@ def dashboard(
 @router.get("/export.csv")
 def export_csv(user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Every logged set as a flat CSV — for spreadsheets or your own pandas work."""
-    from fastapi.responses import StreamingResponse
-
     df = _load_frame(user, db, None, None)
     dist_unit = distance_unit_for(user.unit)
     if df.empty:

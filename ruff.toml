@@ -1,0 +1,49 @@
+# Matches .pylintrc: SQLAlchemy 2.0's typed columns run long.
+line-length = 120
+target-version = "py312"
+
+exclude = [
+    "server/.venv",
+    "node_modules",
+    "dist",
+    # The April 2026 prototype, kept for history and wired into nothing.
+    # Same scope pylint runs with. See README § Repository history.
+    "server/main.py",
+]
+
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # import sorting
+    "UP",   # pyupgrade — this is a 3.12-only codebase
+    "B",    # bugbear
+    "C4",   # comprehension clarity
+    "SIM",  # simplification
+]
+
+[lint.flake8-bugbear]
+# FastAPI's whole dependency-injection model is function calls in defaults.
+# Ruff documents this list as the fix rather than silencing B008 wholesale.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.File",
+    "fastapi.Form",
+]
+
+[lint.isort]
+# `app` is this project's package, not a third-party one.
+known-first-party = ["app"]
+
+[lint.per-file-ignores]
+# Config is read at import time, so the app import must follow the env setup.
+"server/tests/conftest.py" = ["E402"]
+
+[format]
+quote-style = "double"
