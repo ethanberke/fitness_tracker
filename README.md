@@ -8,6 +8,8 @@ days as routines, and watch the lines move.
 - **Database** — SQLite file (`data/fitness.db`); swap in Postgres by setting `DATABASE_URL`
 - **Auth** — email + password, JWT; each account only ever sees its own workouts
 
+Working on this with Claude Code? `CLAUDE.md` carries the invariants and gotchas.
+
 ## Quick start (development)
 
 ```bash
@@ -145,15 +147,35 @@ if you'd rather do your own analysis in a notebook.
 ## Project layout
 
 ```
-├── src/                  # React app (pages, components, api client, contexts)
+├── src/                    # React app (pages, components, api client, contexts)
 ├── server/
 │   ├── app/
-│   │   ├── main.py       # FastAPI app; serves ./static in production
-│   │   ├── models.py     # SQLAlchemy tables
-│   │   ├── units.py      # lb/kg, mi/km conversion at the API boundary
-│   │   └── routers/      # auth, exercises, routines, workouts, progress
-│   ├── scripts/          # demo_data.py
-│   └── tests/            # pytest suite over the whole API
-├── Dockerfile            # node build → python runtime, one image
+│   │   ├── main.py         # FastAPI app; serves ./static in production
+│   │   ├── models.py       # SQLAlchemy tables
+│   │   ├── units.py        # lb/kg, mi/km conversion at the API boundary
+│   │   └── routers/        # auth, exercises, routines, workouts, progress
+│   ├── scripts/            # demo_data.py
+│   ├── tests/              # pytest suite over the whole API
+│   ├── main.py             # ← April 2026 prototype, superseded (see below)
+│   └── migration.sql       # ← April 2026 prototype, superseded
+├── CLAUDE.md               # context for Claude Code sessions
+├── Dockerfile              # node build → python runtime, one image
 └── docker-compose.yml
 ```
+
+The app entrypoint is `app.main:app`. `server/main.py` is the earlier prototype and
+is not wired into anything — see below.
+
+## Repository history
+
+This repo started in April 2026 as a single `exercises` table plus two raw-psycopg2
+FastAPI routes. Those files are still here (`server/main.py`, `server/migration.sql`)
+and that history is preserved in the git log, but nothing imports them.
+
+They were superseded rather than extended because the original schema stored one row
+per exercise with a single `working_set_count` / `working_weight`. That can't record
+185×5, 185×5, 195×3 as three distinct sets — and individual sets are exactly what
+estimated 1RM, session volume, and PR detection are computed from. The current schema
+splits `workouts → set_entries` for that reason.
+
+Delete them whenever you like; nothing depends on them.
