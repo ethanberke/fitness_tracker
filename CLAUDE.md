@@ -101,6 +101,9 @@ planned, and the streak counter walks back in 7-day steps from it.
   Superseded by `server/app/`, wired into nothing, kept for history. Don't extend
   them, and note that `uvicorn --app-dir server` makes `main:app` and `app.main:app`
   both resolvable — the real one is `app.main:app`.
+- **The SPA fallback 404s paths with a file extension.** `/nope.png` returns 404
+  rather than `index.html`, so a typo'd asset reference fails loudly; extensionless
+  paths (`/progress`, `/history`) still serve the app for client-side routing.
 - **`data/` holds the JWT signing secret** (`.jwt_secret`, generated on first boot)
   alongside the SQLite file. It is gitignored; deleting it signs everyone out.
 - **`server/static/` is build output** — `npm run build && cp -r dist server/static`,

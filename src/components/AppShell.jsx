@@ -52,6 +52,12 @@ export default function AppShell() {
     <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
       <AppBar position="sticky" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar variant="dense">
+          <Box
+            component="img"
+            src="/running_logo.png"
+            alt=""
+            sx={{ width: 28, height: 28, mr: 1, display: 'block' }}
+          />
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
